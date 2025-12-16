@@ -1,0 +1,40 @@
+# Flutter / Dart
+.dart_tool/
+.build/
+.packages
+.pub/
+.pub-cache/
+.flutter-plugins
+.flutter-plugins-dependencies
+.metadata
+
+# Build outputs
+build/
+
+# Environment variables
+.env
+.env.*
+
+# Android
+android/.gradle/
+android/local.properties
+android/.kotlin/
+android/**/GeneratedPluginRegistrant.java
+android/app/google-services.json
+
+# iOS
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/App.framework
+ios/Flutter/Generated.xcconfig
+ios/Flutter/flutter_export_environment.sh
+ios/Runner/GoogleService-Info.plist
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+
+# Logs
+*.log
