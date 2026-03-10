@@ -33,6 +33,14 @@ class _SplashScreenState extends State<SplashScreen> {
       // ignore: use_build_context_synchronously
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       
+      // التحقق من وضع الضيف أولاً
+      await authProvider.checkGuestMode();
+      if (authProvider.isGuest) {
+        // إذا كان المستخدم ضيف، انتقل مباشرة للصفحة الرئيسية
+        _navigateToHome();
+        return;
+      }
+      
       // التحقق من حالة تسجيل الدخول في Supabase
       final user = Supabase.instance.client.auth.currentUser;
       

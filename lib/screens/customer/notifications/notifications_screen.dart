@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/notification_provider.dart';
+import '../../../providers/auth_provider.dart';
 import '../../../models/notification_model.dart';
 import '../../../utils/colors.dart';
 import '../../../widgets/common/connectivity_wrapper.dart';
+import '../../../widgets/common/guest_guard.dart';
 import 'notification_detail_screen.dart';
 
 class NotificationsScreen extends StatefulWidget {
@@ -41,10 +43,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   Widget build(BuildContext context) {
     return ConnectivityWrapper(
-      child: Scaffold(
-        
-        backgroundColor: AppColors.backgroundLight,
-          appBar: AppBar(
+      child: GuestGuard(
+        message: 'يجب عليك تسجيل الدخول لعرض الإشعارات',
+        child: Scaffold(
+          
+          backgroundColor: AppColors.backgroundLight,
+            appBar: AppBar(
            
                      surfaceTintColor: AppColors.backgroundWhite,
 
@@ -170,6 +174,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               ),
             );
           },
+        ),
         ),
       ),
     );

@@ -3,11 +3,14 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:provider/provider.dart';
 import '../../../services/supabase_service.dart';
 import '../../../services/user_service.dart';
+import '../../../providers/auth_provider.dart';
 import '../../../utils/supabase_config.dart';
 import '../../../utils/colors.dart';
 import '../../../widgets/common/connectivity_wrapper.dart';
+import '../../../widgets/common/guest_guard.dart';
 
 class SupportScreen extends StatefulWidget {
   const SupportScreen({super.key});
@@ -91,8 +94,10 @@ class _SupportScreenState extends State<SupportScreen> {
   @override
   Widget build(BuildContext context) {
     return ConnectivityWrapper(
-      child: Scaffold(
-      appBar: AppBar(
+      child: GuestGuard(
+        message: 'يجب عليك تسجيل الدخول للتواصل مع الدعم الفني',
+        child: Scaffold(
+        appBar: AppBar(
         title: const Text('الدعم والتواصل', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
         backgroundColor: AppColors.backgroundWhite,
         centerTitle: true,
@@ -187,8 +192,8 @@ class _SupportScreenState extends State<SupportScreen> {
                 ],
               ),
             ),
-      ), // ConnectivityWrapper closing
-
-    );
+        ), // Scaffold closing
+      ), // GuestGuard closing
+    ); // ConnectivityWrapper closing
   }
 }

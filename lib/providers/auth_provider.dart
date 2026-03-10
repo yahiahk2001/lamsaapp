@@ -2,22 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../utils/jwt_error_handler.dart';
 import '../services/fcm_service.dart';
+import '../services/guest_service.dart';
+import '../services/cart_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   User? _currentUser;
   bool _isLoading = false;
   String? _error;
+  bool _isGuest = false;
 
   User? get currentUser => _currentUser;
   bool get isLoading => _isLoading;
   String? get error => _error;
   bool get isLoggedIn => _currentUser != null;
+  bool get isGuest => _isGuest;
 
   AuthProvider() {
     _initializeAuth();
   }
 
-  void _initializeAuth() {
+  void _initializeAuth() async {
+    // التحقق من وضع الضيف
+    _isGuest = await GuestService.isGuestMode();
     
     // التحقق من المستخدم الحالي عند بدء التطبيق
     _currentUser = Supabase.instance.client.auth.currentUser;
@@ -28,16 +34,24 @@ class AuthProvider extends ChangeNotifier {
     }
     
     // الاستماع لتغييرات حالة المصادقة
-    Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+    Supabase.instance.client.auth.onAuthStateChange.listen((data) async {
       final previousUser = _currentUser;
       _currentUser = data.session?.user;
       _error = null;
-      notifyListeners();
       
       // تحديث FCM Token عند تسجيل الدخول
       if (_currentUser != null && previousUser?.id != _currentUser?.id) {
         _updateFCMTokenForUser(_currentUser!.id);
+        
+        // نقل سلة الضيف إلى حساب المستخدم إذا كان في وضع الضيف
+        if (_isGuest) {
+          await CartService.migrateGuestCartToUser(_currentUser!.id);
+          _isGuest = false;
+          await GuestService.disableGuestMode();
+        }
       }
+      
+      notifyListeners();
       
       // تحديث معرف المستخدم في NotificationProvider
       // سيتم تحديثه من main.dart عند الحاجة
@@ -141,6 +155,60 @@ class AuthProvider extends ChangeNotifier {
   // توجيه المستخدم إلى صفحة تسجيل الدخول عند خطأ JWT
   void redirectToLoginOnJwtError(BuildContext context, dynamic error) {
     JwtErrorHandler.handleJwtError(context, error);
+  }
+
+  /// تسجيل الدخول كضيف
+  Future<void> signInAsGuest() async {
+    try {
+      setLoading(true);
+      
+      // تفعيل وضع الضيف
+      await GuestService.enableGuestMode();
+      
+      // تعيين حالة الضيف
+      _isGuest = true;
+      _currentUser = null;
+      setError(null);
+      
+      // إخطار المستمعين بالتغيير
+      notifyListeners();
+      
+    } catch (e) {
+      setError('فشل في تسجيل الدخول كضيف: $e');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  /// التحقق من حالة تسجيل الدخول (مسجل دخول أو ضيف)
+  bool get isAuthenticated => _currentUser != null || _isGuest;
+
+  /// الخروج من وضع الضيف
+  Future<void> signOutFromGuest() async {
+    try {
+      setLoading(true);
+      
+      // إلغاء وضع الضيف
+      await GuestService.disableGuestMode();
+      
+      // إعادة تعيين حالة الضيف
+      _isGuest = false;
+      setError(null);
+      
+      // إخطار المستمعين بالتغيير
+      notifyListeners();
+      
+    } catch (e) {
+      setError('فشل في الخروج من وضع الضيف: $e');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  /// تحديث حالة الضيف
+  Future<void> checkGuestMode() async {
+    _isGuest = await GuestService.isGuestMode();
+    notifyListeners();
   }
 }
 

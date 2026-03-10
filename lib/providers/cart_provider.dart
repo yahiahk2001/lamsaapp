@@ -17,6 +17,11 @@ class CartProvider extends ChangeNotifier {
   double get totalAmount => _items.fold(0, (sum, item) => sum + (item.price * item.quantity));
   String? get orderNotes => CartService.orderNotes;
 
+  CartProvider() {
+    // تحميل السلة عند إنشاء Provider
+    loadCart();
+  }
+
   // تحميل السلة من الخدمة
   void loadCart() {
     _items = List.from(CartService.items);

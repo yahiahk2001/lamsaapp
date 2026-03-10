@@ -2,11 +2,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/product_model.dart';
 import '../models/order_model.dart';
 import '../models/cart_item_model.dart';
+import 'guest_service.dart';
 
 class CartService {
   static final List<CartItem> _items = [];
   static final SupabaseClient _supabase = Supabase.instance.client;
   static String? _orderNotes; // ملاحظات الطلب العامة
+  static bool _isInitialized = false;
 
   static List<CartItem> get items => List.unmodifiable(_items);
   static String? get orderNotes => _orderNotes;
@@ -39,6 +41,9 @@ class CartService {
         isCarton: isCarton,
       ));
     }
+    
+    // حفظ السلة (للضيف محلياً أو للمستخدم في السحابة)
+    await _saveCart();
   }
 
   // إضافة منتج مع سعر محدد (للطلبات بالكارتون)
@@ -88,19 +93,7 @@ class CartService {
 
   static Future<void> removeItem(String productId) async {
     _items.removeWhere((item) => item.productId == productId);
-
-    final userId = _supabase.auth.currentUser?.id;
-    if (userId != null) {
-      try {
-        await _supabase
-            .from('cart_items')
-            .delete()
-            .eq('user_id', userId)
-            .eq('product_id', productId);
-      } catch (e) {
-        // تجاهل الخطأ السحابي للحفاظ على تجربة المستخدم
-      }
-    }
+    await _saveCart();
   }
 
   static Future<void> updateQuantity(String productId, int quantity) async {
@@ -112,30 +105,7 @@ class CartService {
         _items[index].quantity = quantity;
       }
     }
-
-    final userId = _supabase.auth.currentUser?.id;
-    if (userId != null) {
-      try {
-        if (quantity <= 0) {
-          await _supabase
-              .from('cart_items')
-              .delete()
-              .eq('user_id', userId)
-              .eq('product_id', productId);
-        } else {
-          await _supabase
-              .from('cart_items')
-              .update({
-                'quantity': quantity,
-                'updated_at': DateTime.now().toIso8601String(),
-              })
-              .eq('user_id', userId)
-              .eq('product_id', productId);
-        }
-      } catch (e) {
-        // تجاهل الخطأ السحابي
-      }
-    }
+    await _saveCart();
   }
 
   static Future<void> updateNotes(String productId, String? notes) async {
@@ -143,39 +113,13 @@ class CartService {
     if (index != -1) {
       _items[index].notes = notes;
     }
-
-    final userId = _supabase.auth.currentUser?.id;
-    if (userId != null) {
-      try {
-        await _supabase
-            .from('cart_items')
-            .update({
-              'notes': notes,
-              'updated_at': DateTime.now().toIso8601String(),
-            })
-            .eq('user_id', userId)
-            .eq('product_id', productId);
-      } catch (e) {
-        // تجاهل الخطأ السحابي
-      }
-    }
+    await _saveCart();
   }
 
   static Future<void> clear() async {
     _items.clear();
     _orderNotes = null; // مسح ملاحظات الطلب العامة أيضاً
-
-    final userId = _supabase.auth.currentUser?.id;
-    if (userId != null) {
-      try {
-        await _supabase
-            .from('cart_items')
-            .delete()
-            .eq('user_id', userId);
-      } catch (e) {
-        // تجاهل الخطأ السحابي
-      }
-    }
+    await _saveCart();
   }
 
   // إدارة ملاحظات الطلب العامة
@@ -316,6 +260,108 @@ class CartService {
       await _supabase.from('cart_items').upsert(rows, onConflict: 'user_id,product_id');
     } catch (e) {
       // تجاهل الأخطاء السحابية هنا
+    }
+  }
+
+  /// حفظ السلة (للضيف محلياً أو للمستخدم في السحابة)
+  static Future<void> _saveCart() async {
+    final userId = _supabase.auth.currentUser?.id;
+    final isGuest = await GuestService.isGuestMode();
+    
+    if (isGuest) {
+      // حفظ محلياً للضيف
+      final cartData = _items.map((item) => {
+        'productId': item.productId,
+        'productName': item.productName,
+        'price': item.price,
+        'cartonPrice': item.cartonPrice,
+        'quantity': item.quantity,
+        'notes': item.notes,
+        'imageUrl': item.imageUrl,
+        'isCarton': item.isCarton,
+      }).toList();
+      await GuestService.saveGuestCart(cartData);
+    } else if (userId != null) {
+      // حفظ في السحابة للمستخدم المسجل
+      await saveCartItems(userId);
+    }
+  }
+
+  /// تحميل السلة عند بدء التطبيق
+  static Future<void> initializeCart() async {
+    if (_isInitialized) return;
+    _isInitialized = true;
+    
+    final userId = _supabase.auth.currentUser?.id;
+    final isGuest = await GuestService.isGuestMode();
+    
+    if (isGuest) {
+      // تحميل من التخزين المحلي للضيف
+      final cartData = await GuestService.loadGuestCart();
+      _items.clear();
+      for (final item in cartData) {
+        _items.add(CartItem(
+          productId: item['productId'] as String,
+          productName: item['productName'] as String,
+          price: (item['price'] as num).toDouble(),
+          cartonPrice: item['cartonPrice'] != null ? (item['cartonPrice'] as num).toDouble() : null,
+          quantity: item['quantity'] as int,
+          notes: item['notes'] as String?,
+          imageUrl: item['imageUrl'] as String?,
+          isCarton: item['isCarton'] as bool? ?? false,
+        ));
+      }
+    } else if (userId != null) {
+      // تحميل من السحابة للمستخدم المسجل
+      await loadCartItems(userId);
+    }
+  }
+
+  /// نقل سلة الضيف إلى حساب المستخدم عند تسجيل الدخول
+  static Future<void> migrateGuestCartToUser(String userId) async {
+    try {
+      // تحميل سلة الضيف المحلية
+      final guestCartData = await GuestService.loadGuestCart();
+      
+      if (guestCartData.isEmpty) return;
+      
+      // تحميل سلة المستخدم من السحابة
+      await loadCartItems(userId);
+      
+      // دمج سلة الضيف مع سلة المستخدم
+      for (final guestItem in guestCartData) {
+        final productId = guestItem['productId'] as String;
+        final isCarton = guestItem['isCarton'] as bool? ?? false;
+        final existingIndex = _items.indexWhere(
+          (item) => item.productId == productId && item.isCarton == isCarton
+        );
+        
+        if (existingIndex != -1) {
+          // المنتج موجود - زيادة الكمية
+          _items[existingIndex].quantity += guestItem['quantity'] as int;
+        } else {
+          // منتج جديد - إضافته
+          _items.add(CartItem(
+            productId: productId,
+            productName: guestItem['productName'] as String,
+            price: (guestItem['price'] as num).toDouble(),
+            cartonPrice: guestItem['cartonPrice'] != null ? (guestItem['cartonPrice'] as num).toDouble() : null,
+            quantity: guestItem['quantity'] as int,
+            notes: guestItem['notes'] as String?,
+            imageUrl: guestItem['imageUrl'] as String?,
+            isCarton: isCarton,
+          ));
+        }
+      }
+      
+      // حفظ السلة المدمجة في السحابة
+      await saveCartItems(userId);
+      
+      // مسح سلة الضيف المحلية
+      await GuestService.clearGuestCart();
+      
+    } catch (e) {
+      // في حالة الخطأ، نحتفظ بسلة الضيف
     }
   }
 }

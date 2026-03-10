@@ -58,12 +58,12 @@ class _CartContentState extends State<CartContent> {
     return ConnectivityWrapper(
       child: Scaffold(
         body: Consumer<CartProvider>(
-        builder: (context, cartProvider, child) {
-          return cartProvider.isEmpty
-              ? _buildEmptyCart(context)
-              : _buildCartContent(context, cartProvider);
-        },
-      ),
+          builder: (context, cartProvider, child) {
+            return cartProvider.isEmpty
+                ? _buildEmptyCart(context)
+                : _buildCartContent(context, cartProvider);
+          },
+        ),
       ),
     );
   }

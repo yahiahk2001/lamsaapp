@@ -8,7 +8,6 @@ import '../../../models/product_model.dart';
 import '../../../providers/cart_provider.dart';
 import '../../../services/user_service.dart';
 import '../../../utils/colors.dart';
-// removed unused import
 import '../cart/cart_screen.dart';
 import '../../../widgets/common/connectivity_wrapper.dart';
 import 'product_image_viewer_screen.dart';

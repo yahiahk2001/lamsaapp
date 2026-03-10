@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "655484088432",
+    "project_id": "seetapp-50427",
+    "storage_bucket": "seetapp-50427.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:655484088432:android:949215c7aea2831bef44b5",
+        "android_client_info": {
+          "package_name": "sweetappp.com"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "655484088432-l2q0b8ivfm02q0tucd8rrqkgaenro61h.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "sweetappp.com",
+            "certificate_hash": "9434f8a43fcd4b03b425b9f2242b7eddecd10a2a"
+          }
+        },
+        {
+          "client_id": "655484088432-aai2rho9t9h2utbr2ktfiposvpvnr8n4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDFvuYTk6jMKLJjpLiZpqHVidgS7L-eOhM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "655484088432-aai2rho9t9h2utbr2ktfiposvpvnr8n4.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

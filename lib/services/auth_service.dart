@@ -20,14 +20,15 @@ class AuthService {
   }
 
   /// الحصول على بيانات المصادقة من Google
-  static Future<GoogleSignInAuthentication?> getGoogleAuthentication(GoogleSignInAccount user) async {
+  static Future<GoogleSignInAuthentication?> getGoogleAuthentication(
+      GoogleSignInAccount user) async {
     try {
       final auth = user.authentication;
-      
+
       if (auth.idToken == null) {
         throw Exception('لم يتم الحصول على رمز المصادقة من Google');
       }
-      
+
       return auth;
     } catch (e) {
       ErrorHandler.logError('Google authentication', e);
@@ -35,10 +36,10 @@ class AuthService {
     }
   }
 
-  /// تسجيل الدخول إلى Supabase
-  static Future<User?> signInToSupabase(GoogleSignInAuthentication auth) async {
+  /// تسجيل الدخول إلى Supabase باستخدام Google
+  static Future<User?> signInToSupabase(
+      GoogleSignInAuthentication auth) async {
     try {
-      
       AuthResponse res;
       try {
         res = await _supabase.auth.signInWithIdToken(
@@ -46,7 +47,6 @@ class AuthService {
           idToken: auth.idToken!,
         );
       } catch (e) {
-        
         // محاولة إنشاء مستخدم جديد إذا فشل تسجيل الدخول العادي
         if (e.toString().contains('provider_email_needs_verification')) {
           return await _createUserWithAlternativeMethod(auth);
@@ -66,16 +66,52 @@ class AuthService {
     }
   }
 
-  /// إنشاء مستخدم بطريقة بديلة
-  static Future<User?> _createUserWithAlternativeMethod(GoogleSignInAuthentication auth) async {
+  /// تسجيل مستخدم جديد بالبريد وكلمة المرور
+  static Future<User?> signUpWithEmail({
+    required String email,
+    required String password,
+  }) async {
     try {
-      
+      final res = await _supabase.auth.signUp(
+        email: email,
+        password: password,
+      );
+      return res.user;
+    } catch (e, stack) {
+      ErrorHandler.logError('Email sign-up', e, stack);
+      rethrow;
+    }
+  }
+
+  /// تسجيل الدخول بالبريد وكلمة المرور
+  static Future<User?> signInWithEmail({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final res = await _supabase.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+      return res.user;
+    } catch (e, stack) {
+      ErrorHandler.logError('Email sign-in', e, stack);
+      rethrow;
+    }
+  }
+
+  /// إنشاء مستخدم بطريقة بديلة
+  static Future<User?> _createUserWithAlternativeMethod(
+      GoogleSignInAuthentication auth) async {
+    try {
       // إنشاء مستخدم جديد في Supabase Auth
       final res = await _supabase.auth.signUp(
-        email: 'temp_${DateTime.now().millisecondsSinceEpoch}@example.com', // بريد مؤقت
-        password: DateTime.now().millisecondsSinceEpoch.toString(), // كلمة مرور مؤقتة
+        email:
+            'temp_${DateTime.now().millisecondsSinceEpoch}@example.com', // بريد مؤقت
+        password:
+            DateTime.now().millisecondsSinceEpoch.toString(), // كلمة مرور مؤقتة
       );
-      
+
       if (res.user != null) {
         return res.user;
       } else {

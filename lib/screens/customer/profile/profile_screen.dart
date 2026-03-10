@@ -347,13 +347,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Scaffold(
         
         backgroundColor: AppColors.backgroundLight,
-        body: _isLoading
-            ? Center(
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.buttonColor),
-                ),
-              )
-            : CustomScrollView(
+        body: Consumer<AuthProvider>(
+          builder: (context, authProvider, child) {
+            // إذا كان المستخدم ضيف، عرض واجهة الضيف
+            if (authProvider.isGuest) {
+              return _buildGuestProfile();
+            }
+            
+            // إذا كان مسجل دخول، عرض الملف الشخصي العادي
+            return _isLoading
+                ? Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.buttonColor),
+                    ),
+                  )
+                : CustomScrollView(
                 slivers: [
                   // Header مع أيقونة المستخدم الكبيرة
                   SliverAppBar(
@@ -531,8 +539,203 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                 ],
-              ),
+              );
+          },
+        ),
       ),
+    );
+  }
+
+  Widget _buildGuestProfile() {
+    return CustomScrollView(
+      slivers: [
+        // Header مع أيقونة الضيف
+        SliverAppBar(
+          expandedHeight: 280,
+          floating: false,
+          pinned: true,
+          backgroundColor: AppColors.buttonColor,
+          flexibleSpace: FlexibleSpaceBar(
+            background: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    AppColors.buttonColor,
+                    AppColors.buttonLightColor,
+                  ],
+                ),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(height: 60),
+                  // أيقونة الضيف
+                  Container(
+                    width: 120,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.15),
+                          blurRadius: 20,
+                          offset: Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      Icons.person_outline,
+                      size: 60,
+                      color: AppColors.buttonColor,
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  // نص الضيف
+                  Text(
+                    'ضيف',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        
+        // محتوى الصفحة
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: Column(
+              children: [
+                // رسالة الترحيب
+                Container(
+                  padding: EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Colors.orange.withOpacity(0.3),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.info_outline,
+                        color: Colors.orange,
+                        size: 40,
+                      ),
+                      SizedBox(height: 12),
+                      Text(
+                        'أنت تتصفح كضيف',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'سجل الدخول للوصول إلى جميع الميزات مثل:\nإضافة المنتجات للسلة، تتبع الطلبات، والمزيد',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppColors.textSecondary,
+                          height: 1.4,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+                
+                SizedBox(height: 32),
+                
+                // زر تسجيل الدخول
+                _buildActionButton(
+                  icon: Icons.login,
+                  label: 'تسجيل الدخول',
+                  onTap: () async {
+                    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                    await authProvider.signOutFromGuest();
+                    
+                    Navigator.pushNamedAndRemoveUntil(
+                      context,
+                      '/login',
+                      (route) => false,
+                    );
+                  },
+                  isPrimary: true,
+                ),
+                
+                SizedBox(height: 32),
+                
+                // الأزرار الإضافية (متاحة للضيوف)
+                _buildActionButton(
+                  icon: Icons.privacy_tip,
+                  label: 'سياسة الخصوصية',
+                  onTap: () async {
+                    final url = Uri.parse('https://poolicy-and-privecy-lamsaa-appp.netlify.app/');
+                    try {
+                      final canLaunch = await canLaunchUrl(url);
+                      if (canLaunch) {
+                        final result = await launchUrl(
+                          url,
+                          mode: LaunchMode.externalApplication,
+                        );
+                        if (!result) {
+                          throw 'فشل في فتح الرابط';
+                        }
+                      } else {
+                        throw 'لا يمكن فتح هذا الرابط';
+                      }
+                    } catch (e) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('فشل في فتح الرابط: ${e.toString()}'),
+                            backgroundColor: Colors.red,
+                            duration: Duration(seconds: 3),
+                          ),
+                        );
+                      }
+                    }
+                  },
+                ),
+                
+                SizedBox(height: 16),
+                
+                _buildActionButton(
+                  icon: Icons.info,
+                  label: 'من نحن',
+                  onTap: () {
+                    Navigator.pushNamed(context, '/about-us');
+                  },
+                ),
+                
+                SizedBox(height: 16),
+                
+                _buildActionButton(
+                  icon: Icons.code,
+                  label: 'مطور لمسة',
+                  onTap: () {
+                    Navigator.pushNamed(context, '/developer');
+                  },
+                ),
+                
+                SizedBox(height: 24),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 

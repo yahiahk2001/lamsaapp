@@ -241,28 +241,27 @@ class _LocationScreenState extends State<LocationScreen> {
   Widget build(BuildContext context) {
     return ConnectivityWrapper(
       child: Scaffold(
-      body: Column(
-        children: [
-          // شريط البحث
-          _buildSearchBar(),
-          // الخريطة
-          SizedBox(
-            height: MediaQuery.of(context).size.height * 0.35,
-            child: _buildMapSection(),
-          ),
-          // تفاصيل الموقع
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: _buildLocationDetailsWithoutButtons(),
+        body: Column(
+          children: [
+            // شريط البحث
+            _buildSearchBar(),
+            // الخريطة
+            SizedBox(
+              height: MediaQuery.of(context).size.height * 0.35,
+              child: _buildMapSection(),
             ),
-          ),
-          // الأزرار الثابتة في الأسفل
-          _buildFixedButtons(),
-        ],
+            // تفاصيل الموقع
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: _buildLocationDetailsWithoutButtons(),
+              ),
+            ),
+            // الأزرار الثابتة في الأسفل
+            _buildFixedButtons(),
+          ],
+        ),
       ),
-      ), // ConnectivityWrapper closing
-
     );
   }
 

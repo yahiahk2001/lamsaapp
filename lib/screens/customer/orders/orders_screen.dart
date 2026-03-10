@@ -4,12 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lamsa/screens/customer/auth/login_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:provider/provider.dart';
 import '../../../services/order_service.dart';
 import '../../../services/user_service.dart';
 import '../../../services/invoice_service.dart';
 import '../../../models/order_model.dart';
+import '../../../providers/auth_provider.dart';
 import '../../../utils/colors.dart';
 import '../../../widgets/common/connectivity_wrapper.dart';
+import '../../../widgets/common/guest_guard.dart';
 
 // محتوى صفحة الطلبات
 class OrdersContent extends StatefulWidget {
@@ -87,7 +90,10 @@ class OrdersContentState extends State<OrdersContent> {
   @override
   Widget build(BuildContext context) {
     return ConnectivityWrapper(
-      child: _buildContent(),
+      child: GuestGuard(
+        message: 'يجب عليك تسجيل الدخول لعرض طلباتك',
+        child: _buildContent(),
+      ),
     );
   }
 

@@ -11,6 +11,7 @@ import '../../../widgets/common/advertisement_slider.dart';
 import '../../../widgets/common/product_card.dart';
 import '../../../providers/home_provider.dart';
 import '../../../providers/cart_provider.dart';
+import '../../../providers/auth_provider.dart';
 import '../../../providers/notification_provider.dart';
 import '../../../models/category_model.dart';
 import '../../../models/advertisement_model.dart';
@@ -239,18 +240,20 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
             ),
             const SizedBox(width: 12),
             // Cart Button with Badge
-            Selector<CartProvider, int>(
-              selector: (context, cartProvider) => cartProvider.totalItems,
-              builder: (context, totalItems, child) {
-                return GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => CartContent(),
-                      ),
-                    );
-                  },
+            Consumer<AuthProvider>(
+              builder: (context, authProvider, _) {
+                return Selector<CartProvider, int>(
+                  selector: (context, cartProvider) => cartProvider.totalItems,
+                  builder: (context, totalItems, child) {
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => CartContent(),
+                          ),
+                        );
+                      },
                   child: Stack(
                     children: [
                       const Icon(
@@ -294,6 +297,8 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
                     ],
                   ),
                 );
+              },
+            );
               },
             ),
           ],

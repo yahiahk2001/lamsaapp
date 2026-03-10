@@ -8,7 +8,7 @@ class UserService {
   static Future<void> saveUserToDatabase(User supabaseUser, GoogleSignInAccount googleUser) async {
     try {
       
-      final userEmail = supabaseUser.email ?? googleUser.email;
+      final String userEmail = supabaseUser.email ?? googleUser.email;
       
       // التحقق من وجود المستخدم في الجدول بالـ ID أو البريد الإلكتروني
       final userExistsById = await _checkUserExists(supabaseUser.id);
@@ -28,17 +28,16 @@ class UserService {
     }
   }
 
-  /// إنشاء مستخدم أساسي في قاعدة البيانات (للمستخدمين الجدد)
-  static Future<void> createBasicUser(User supabaseUser, GoogleSignInAccount googleUser) async {
+  /// إنشاء مستخدم أساسي في قاعدة البيانات (للمستخدمين الجدد عبر Google)
+  static Future<void> createBasicUser(
+      User supabaseUser, GoogleSignInAccount googleUser) async {
     try {
-      
       final userEmail = supabaseUser.email ?? googleUser.email;
-      
+
       // التحقق من وجود المستخدم في الجدول
       final userExistsById = await _checkUserExists(supabaseUser.id);
-      // ignore: unnecessary_null_comparison
-      final userExistsByEmail = userEmail != null ? await _checkUserExistsByEmail(userEmail) : false;
-      
+      final userExistsByEmail = await _checkUserExistsByEmail(userEmail);
+
       if (userExistsById || userExistsByEmail) {
         return;
       }
@@ -54,19 +53,46 @@ class UserService {
         'updated_at': DateTime.now().toIso8601String(),
       };
 
-      // للتشخيص
-
       await _supabase.from('users').insert(userData);
-      
-      
     } catch (e) {
-      
       // إذا كان هناك تضارب، حاول الحصول على المستخدم الموجود
       if (e.toString().contains('23505')) {
         return;
       }
-      
+
       // لا نريد إيقاف العملية إذا فشل إنشاء المستخدم الأساسي
+    }
+  }
+
+  /// إنشاء مستخدم أساسي في قاعدة البيانات (للمستخدمين الجدد عبر البريد)
+  static Future<void> createBasicUserWithEmail(User supabaseUser) async {
+    try {
+      final userEmail = supabaseUser.email;
+
+      // التحقق من وجود المستخدم في الجدول
+      final userExistsById = await _checkUserExists(supabaseUser.id);
+      // ignore: unnecessary_null_comparison
+      final userExistsByEmail =
+          userEmail != null ? await _checkUserExistsByEmail(userEmail) : false;
+
+      if (userExistsById || userExistsByEmail) {
+        return;
+      }
+
+      // إنشاء مستخدم جديد بالبيانات الأساسية فقط
+      final userData = <String, dynamic>{
+        'id': supabaseUser.id,
+        'email': userEmail,
+        'name': null,
+        'phone_number': null,
+        'user_type': 'customer',
+        'created_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toIso8601String(),
+      };
+
+      await _supabase.from('users').insert(userData);
+    } catch (e) {
+      // لا نريد إيقاف عملية المصادقة إذا فشل إنشاء المستخدم الأساسي
     }
   }
 

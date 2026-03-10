@@ -9,6 +9,7 @@ import 'providers/auth_provider.dart';
 import 'providers/cart_provider.dart';
 import 'providers/notification_provider.dart';
 import 'services/fcm_service.dart';
+import 'services/cart_service.dart';
 import 'utils/supabase_config.dart';
 import 'utils/navigation.dart';
 
@@ -23,19 +24,32 @@ void main() async {
     anonKey: SupabaseConfig.anonKey,
   );
 
-  // تهيئة FCM مع معالجة أفضل للأخطاء
+  // إعداد معالج الإشعارات في الخلفية
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
+  // تشغيل التطبيق فوراً حتى يتاح منفذ VM Service (يُحل تعليق المحاكي)
+  runApp(MyApp());
+
+  // تهيئة FCM والسلة بعد أول إطار حتى لا تُحجب دورة Flutter
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    _initServicesInBackground();
+  });
+}
+
+/// تهيئة الخدمات في الخلفية بعد ظهور أول إطار
+void _initServicesInBackground() async {
   try {
     await FCMService.initialize();
     print('FCM Service initialized successfully');
   } catch (e) {
     print('FCM Service initialization failed: $e');
-    // لا نوقف التطبيق إذا فشلت تهيئة FCM
   }
-  
-  // إعداد معالج الإشعارات في الخلفية
-  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-  
-  runApp(MyApp());
+  try {
+    await CartService.initializeCart();
+    print('Cart Service initialized successfully');
+  } catch (e) {
+    print('Cart Service initialization failed: $e');
+  }
 }
 
 class MyApp extends StatelessWidget {

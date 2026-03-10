@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../providers/cart_provider.dart';
 import '../../../widgets/common/custom_app_bar.dart';
+import '../../../widgets/common/guest_guard.dart';
 import '../../../utils/colors.dart';
 import '../../../services/user_service.dart';
 import '../../../services/order_service.dart';
@@ -63,12 +64,14 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: CustomAppBar(
-        title: 'تأكيد الطلب',
-        showBackButton: true,
-      ),
-      body: SingleChildScrollView(
+    return GuestGuard(
+      message: 'يجب عليك تسجيل الدخول لإتمام وتأكيد الطلب. سيتم الاحتفاظ بسلتك عند تسجيل الدخول.',
+      child: Scaffold(
+        appBar: CustomAppBar(
+          title: 'تأكيد الطلب',
+          showBackButton: true,
+        ),
+        body: SingleChildScrollView(
         padding: EdgeInsets.all(8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -93,7 +96,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
           ],
         ),
       ),
-
+    ),
     );
   }
 

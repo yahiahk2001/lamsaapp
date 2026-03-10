@@ -154,48 +154,48 @@ class ProductCard extends StatelessWidget {
                             child: Consumer<CartProvider>(
                               builder: (context, cartProvider, child) {
                                 return InkWell(
-                                  onTap: cartProvider.isLoading ? null : () async {
-                                    await cartProvider.addItem(product);
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text('تم إضافة ${product.name} إلى السلة'),
-                                          backgroundColor: Colors.green,
-                                          behavior: SnackBarBehavior.floating,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
+                                      onTap: cartProvider.isLoading ? null : () async {
+                                        await cartProvider.addItem(product);
+                                        if (context.mounted) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text('تم إضافة ${product.name} إلى السلة'),
+                                              backgroundColor: Colors.green,
+                                              behavior: SnackBarBehavior.floating,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      },
+                                      borderRadius: BorderRadius.circular(12),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
+                                        child: const Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons.add_shopping_cart,
+                                              size: 12,
+                                              color: Colors.white,
+                                            ),
+                                            SizedBox(width: 3),
+                                            Text(
+                                              'أضف للسلة',
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w600,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                      );
-                                    }
+                                      ),
+                                    );
                                   },
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
-                                    child: const Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          Icons.add_shopping_cart,
-                                          size: 12,
-                                          color: Colors.white,
-                                        ),
-                                        SizedBox(width: 3),
-                                        Text(
-                                          'أضف للسلة',
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w600,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
+                                ),
+                              ),
                         ],
                       ),
                     ],
